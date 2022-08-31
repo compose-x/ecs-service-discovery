@@ -1,0 +1,64 @@
+[tool.poetry]
+name = "ecs_service_discovery"
+version = "0.1.0"
+description = ""
+authors = ["John Preston <john@ews-network.net>"]
+readme = "README.rst"
+keywords = ["ecs", "service discovery", "observability"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Intended Audience :: System Administrators",
+  "Intended Audience :: Information Technology",
+  "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+compose-x-common = "^1.1"
+prometheus-client = "^0.14.1"
+
+[tool.poetry.dev-dependencies]
+black = "^22.6.0"
+isort = "^5.10.1"
+pre-commit = "^2.20.0"
+mypy-boto3-sts = "^1.24.36"
+mypy-boto3-ecs = "^1.24.36"
+mypy-boto3-ssm = "^1.24.39"
+Sphinx = "^5.1.1"
+sphinx-material = "^0.0.35"
+sphinx-sitemap = "^2.2.0"
+
+[tool.poetry.scripts]
+ecs-service-discovery = "ecs_service_discovery.cli:main"
+ecs-sd = "ecs_service_discovery.cli:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+known_first_party = "kelvin"
+
+[tool.coverage.report]
+exclude_lines = [
+  "if __name__ == '__main__'"
+]
+
+[tool.coverage.run]
+omit = [
+  "*/cli.py"
+]
