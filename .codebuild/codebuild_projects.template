@@ -8,6 +8,9 @@ Metadata:
 
 Parameters:
 
+  ECRRepositoryName:
+    Type: String
+
   BuildComputeConfiguration:
     Type: String
     Default: Small
@@ -190,7 +193,10 @@ Resources:
         ComputeType: !FindInMap [ "CodeBuild", "EnvironmentSize", !Ref BuildComputeConfiguration ]
         Image: !Ref BuildImage
         Type: LINUX_CONTAINER
-      #        EnvironmentVariables: []
+        EnvironmentVariables:
+          - Name: REPOSITORY_NAME
+            Type: PLAINTEXT
+            Value: !Ref ECRRepositoryName
       Source:
         Type: GITHUB
         ReportBuildStatus: True

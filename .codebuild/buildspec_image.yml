@@ -6,7 +6,6 @@ env:
   variables:
     USE_EPOCH: 0
     DIND_VOL_PATH: /var/lib/docker/volumes/agent-resources_user_volume/_data/srcDownload/src
-    REPOSITORY_NAME: s3-autosync
 
 phases:
   install:

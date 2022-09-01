@@ -4,6 +4,10 @@
 Installation
 ============
 
+.. note::
+
+    This project is meant to be an application / sidecar service, not a python library.
+
 
 Stable release
 --------------
@@ -12,7 +16,7 @@ To install ECS Service Discovery, run this command in your terminal:
 
 .. code-block:: console
 
-    $ pip install ecs_service_discovery
+    pip install ecs_service_discovery
 
 This is the preferred method to install ECS Service Discovery, as it will always install the most recent stable release.
 
@@ -32,19 +36,20 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/compose-x/ecs_service_discovery
+    git clone git://github.com/compose-x/ecs_service_discovery
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/compose-x/ecs_service_discovery/tarball/master
+    curl -OJL https://github.com/compose-x/ecs_service_discovery/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
 .. code-block:: console
 
-    $ python setup.py install
+    pip install poetry --user -U
+    poetry install
 
 
 .. _Github repo: https://github.com/compose-x/ecs_service_discovery

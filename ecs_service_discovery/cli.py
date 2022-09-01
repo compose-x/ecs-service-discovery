@@ -25,7 +25,6 @@ def main():
         required=False,
         help="aws profile to use. Defaults to `default`",
         type=str,
-        default="default",
     )
     parser.add_argument(
         "-p",
@@ -44,7 +43,10 @@ def main():
     except OSError as error:
         print(error)
         return 127
-    session = Session(profile_name=args.profile)
+    if args.profile:
+        session = Session(profile_name=args.profile)
+    else:
+        session = Session()
     ecs_service_discovery(
         args.output_dir, prometheus_metrics_port=args.prometheus_port, session=session
     )
