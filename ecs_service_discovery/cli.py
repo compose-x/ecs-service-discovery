@@ -4,11 +4,9 @@
 """Console script for ecs_service_discovery."""
 import argparse
 import sys
-from datetime import datetime as dt
 from os import environ, makedirs
 
-from boto3.session import Session
-from compose_x_common.compose_x_common import DURATIONS_RE, get_duration
+from compose_x_common.compose_x_common import DURATIONS_RE
 
 from ecs_service_discovery.ecs_service_discovery import ecs_service_discovery
 
@@ -42,33 +40,25 @@ def main():
         help="Time between ECS discovery intervals",
         default="30s",
     )
+    parser.add_argument(
+        "--prometheus-output-format",
+        type=str,
+        default="json",
+        help="Change the format of generated files. JSON or YAML.",
+    )
     parser.add_argument("_", nargs="*")
     args = parser.parse_args()
-
     print("Arguments: " + str(args._))
     try:
         makedirs(args.output_dir, exist_ok=True)
     except OSError as error:
         print(error)
         return 127
-    if args.profile:
-        session = Session(profile_name=args.profile)
-    else:
-        session = Session()
     if not DURATIONS_RE.match(args.intervals):
         raise ValueError(
             args.intervals, "value is not valid. Must match", DURATIONS_RE.pattern
         )
-    now = dt.now()
-    interval_rtime = get_duration(args.intervals)
-    intervals_in_seconds = round((now + interval_rtime - now).total_seconds())
-    print("Scanning every", interval_rtime.normalized())
-    ecs_service_discovery(
-        args.output_dir,
-        prometheus_metrics_port=args.prometheus_port,
-        refresh_interval=intervals_in_seconds,
-        session=session,
-    )
+    ecs_service_discovery(**vars(args))
     return 0
 
 

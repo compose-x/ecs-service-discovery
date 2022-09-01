@@ -6,6 +6,14 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING
 
+import yaml
+
+try:
+    from yaml import CDumper as Dumper
+    from yaml import CSafeDumper as SafeDumper
+except ImportError:
+    from yaml import Dumper, SafeDumper
+
 if TYPE_CHECKING:
     from ecs_service_discovery.ecs_service_discovery import EcsCluster
 
@@ -53,7 +61,7 @@ def identify_prometheus_enabled_targets(
 
 
 def write_prometheus_targets_per_cluster(
-    cluster: EcsCluster, cluster_targets: list[dict], output_dir: str
+    cluster: EcsCluster, cluster_targets: list[dict], output_dir: str, **kwargs
 ) -> None:
     """
     Writes file for prometheus scraping.
@@ -62,10 +70,17 @@ def write_prometheus_targets_per_cluster(
     PROMETHEUS_TARGETS.labels(cluster.arn).set(
         sum(len(_t["targets"]) for _t in cluster_prometheus_targets)
     )
-    with open(f"{output_dir}/{cluster.name}.json", "w") as targets_fd:
-        targets_fd.write(
-            json.dumps(cluster_prometheus_targets, separators=(",", ":"), indent=1)
-        )
+    file_format = set_else_none("prometheus_output_format", kwargs, alt_value="json")
+    if file_format == "yaml":
+        file_path = f"{output_dir}/{cluster.name}.yaml"
+        with open(file_path, "w") as targets_fd:
+            targets_fd.write(yaml.dump(cluster_prometheus_targets, Dumper=SafeDumper))
+    else:
+        file_path = f"{output_dir}/{cluster.name}.json"
+        with open(file_path, "w") as targets_fd:
+            targets_fd.write(
+                json.dumps(cluster_prometheus_targets, separators=(",", ":"), indent=1)
+            )
 
 
 def create_prometheus_target(
