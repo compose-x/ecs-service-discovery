@@ -63,7 +63,9 @@ def write_prometheus_targets_per_cluster(
         sum(len(_t["targets"]) for _t in cluster_prometheus_targets)
     )
     with open(f"{output_dir}/{cluster.name}.json", "w") as targets_fd:
-        targets_fd.write(json.dumps(cluster_prometheus_targets))
+        targets_fd.write(
+            json.dumps(cluster_prometheus_targets, separators=(",", ":"), indent=1)
+        )
 
 
 def create_prometheus_target(
@@ -94,7 +96,7 @@ def create_prometheus_target(
             return {}
         return {
             "labels": {
-                "jobs": job_name,
+                "job": job_name,
                 "cluster_arn": task["clusterArn"],
             },
             "targets": [f"{host_ip}:{scraping_port}"],
