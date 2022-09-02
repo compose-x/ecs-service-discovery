@@ -8,7 +8,7 @@ from os import environ, makedirs
 
 from compose_x_common.compose_x_common import DURATIONS_RE
 
-from ecs_service_discovery.ecs_service_discovery import ecs_service_discovery
+from ecs_service_discovery.ecs_service_discovery import EcsServiceDiscovery
 
 OUTPUT_DIRECTORY = environ.get("OUTPUT_DIRECTORY", "/tmp/prometheus")
 PROMETHEUS_METRICS_PORT = environ.get("PROMETHEUS_METRICS_PORT", 8337)
@@ -58,7 +58,8 @@ def main():
         raise ValueError(
             args.intervals, "value is not valid. Must match", DURATIONS_RE.pattern
         )
-    ecs_service_discovery(**vars(args))
+    ecs_sd = EcsServiceDiscovery()
+    ecs_sd.run(**vars(args))
     return 0
 
 

@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import signal
 from datetime import datetime as dt
 from time import sleep
 
@@ -55,40 +56,53 @@ def define_session(**kwargs) -> Session:
     return Session()
 
 
-def ecs_service_discovery(
-    output_dir: str,
-    **kwargs: dict,
-) -> int:
-    """
-    Main program loop. Will list the ECS Clusters with the associated IAM session.
-    It will expose prometheus metrics, used for statistics on how well the discovery
-    performs.
-    """
-    session = define_session(**kwargs)
-    refresh_interval = define_intervals(**kwargs)
-    prometheus_metrics_port = int(
-        set_else_none("prometheus_metrics_port", kwargs, alt_value=8337)
-    )
-    _continue_to_work: bool = True
-    _clusters: dict = {}
-    start_http_server(prometheus_metrics_port)
-    while _continue_to_work:
-        try:
-            for cluster_arn in list_all_ecs_clusters(session=session):
-                start = dt.now()
-                if cluster_arn not in _clusters:
-                    _clusters[cluster_arn] = EcsCluster(cluster_arn)
-                cluster_targets = merge_tasks_and_hosts(_clusters[cluster_arn], session)
-                write_prometheus_targets_per_cluster(
-                    _clusters[cluster_arn],
-                    cluster_targets,
-                    output_dir=output_dir,
-                    **kwargs,
-                )
-                CLUSTER_PROMETHEUS_PROCESSING_TIME.labels(cluster_arn).set(
-                    (dt.now() - start).total_seconds()
-                )
-            sleep(refresh_interval)
-        except KeyboardInterrupt:
-            _continue_to_work = False
-    return 0
+class EcsServiceDiscovery:
+    def __init__(self):
+        self._run = True
+        self._quit_now = False
+        signal.signal(signal.SIGINT, self.exit_gracefully)
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
+
+    def run(self, output_dir: str, **kwargs: dict) -> int:
+        """
+        Main program loop. Will list the ECS Clusters with the associated IAM session.
+        It will expose prometheus metrics, used for statistics on how well the discovery
+        performs.
+        """
+        session = define_session(**kwargs)
+        refresh_interval = define_intervals(**kwargs)
+        prometheus_metrics_port = int(
+            set_else_none("prometheus_metrics_port", kwargs, alt_value=8337)
+        )
+        _clusters: dict = {}
+        start_http_server(prometheus_metrics_port)
+        while self._run:
+            try:
+                for cluster_arn in list_all_ecs_clusters(session=session):
+                    start = dt.now()
+                    if cluster_arn not in _clusters:
+                        _clusters[cluster_arn] = EcsCluster(cluster_arn)
+                    cluster_targets = merge_tasks_and_hosts(
+                        _clusters[cluster_arn], session
+                    )
+                    write_prometheus_targets_per_cluster(
+                        _clusters[cluster_arn],
+                        cluster_targets,
+                        output_dir=output_dir,
+                        **kwargs,
+                    )
+                    CLUSTER_PROMETHEUS_PROCESSING_TIME.labels(cluster_arn).set(
+                        (dt.now() - start).total_seconds()
+                    )
+                if not self._quit_now:
+                    sleep(refresh_interval)
+            except KeyboardInterrupt:
+                self._run = False
+                self._quit_now = True
+        print(f"Exiting with {self._run}")
+        return 0
+
+    def exit_gracefully(self, signum, event):
+        print(f"Signal {signum} received")
+        self._run = False
+        self._quit_now = True
