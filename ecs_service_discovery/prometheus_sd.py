@@ -83,8 +83,35 @@ def write_prometheus_targets_per_cluster(
             )
 
 
+def set_labels(task: dict, container_name, job_name: str) -> dict:
+    task_def = task["_taskDefinition"]
+    for container_def in task_def["containerDefinitions"]:
+        if container_name == container_def["name"]:
+            break
+    else:
+        raise KeyError(
+            f"Container definition for {container_name} not found in task definition",
+            task_def["taskDefinitionArn"],
+            [_container["name"] for _container in task_def["containerDefinitions"]],
+        )
+    labels = {
+        "job": job_name,
+        "ecs_cluster_arn": task["clusterArn"],
+        "ecs_task_definition_arn": task_def["taskDefinitionArn"],
+        "ecs_task_family": task_def["family"],
+        "ecs_task_launch_type": task["launchType"],
+    }
+    labels.update(container_def["dockerLabels"])
+    task_instance = set_else_none("_instance", task)
+    if task_instance:
+        labels["ecs_task_instance"]: str = task_instance["containerInstanceArn"]
+        if keyisset("ec2InstanceId", task_instance):
+            labels["ecs_instance_ec2_instance_id"] = task_instance["ec2InstanceId"]
+    return labels
+
+
 def create_prometheus_target(
-    task: dict, job_name: dict, host_ip: str, container_name: str, prometheus_port: int
+    task: dict, job_name: str, host_ip: str, container_name: str, prometheus_port: int
 ) -> dict:
     """
     Maps container from task_definition to task, identifies the prometheus scan port, returns host target.
@@ -97,7 +124,7 @@ def create_prometheus_target(
             continue
         network_bindings = set_else_none("networkBindings", task_container)
         for network_config in network_bindings:
-            if network_config["containerPort"] == prometheus_port:
+            if int(network_config["containerPort"]) == int(prometheus_port):
                 scraping_port = int(
                     set_else_none(
                         "hostPort",
@@ -109,10 +136,9 @@ def create_prometheus_target(
         else:
             print("No prometheus port found for task network settings")
             return {}
+        labels = set_labels(task, task_container["name"], job_name)
+
         return {
-            "labels": {
-                "job": job_name,
-                "cluster_arn": task["clusterArn"],
-            },
+            "labels": labels,
             "targets": [f"{host_ip}:{scraping_port}"],
         }
