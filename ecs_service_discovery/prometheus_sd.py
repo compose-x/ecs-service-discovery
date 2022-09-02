@@ -34,7 +34,6 @@ def identify_prometheus_enabled_targets(
     """
     prom_mapping: list = []
     for task in tasks:
-        _task_prometheus_ports: list = []
         _task_def = task["_taskDefinition"]
         _host_ip = get_container_host_ip(task)
         for container in _task_def["containerDefinitions"]:

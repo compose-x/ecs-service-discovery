@@ -86,10 +86,9 @@ def get_container_host_ip(task: dict) -> str:
                 continue
             if keyisset("name", detail) and detail["name"] == "privateIPv4Address":
                 return detail["value"]
-        else:
-            raise AttributeError(
-                "Unable to get the IP address for ENI attachment", eni_attachment
-            )
+        raise AttributeError(
+            "Unable to get the IP address for ENI attachment", eni_attachment
+        )
 
 
 def merge_tasks_and_hosts(cluster: EcsCluster, session: Session = None) -> list:
