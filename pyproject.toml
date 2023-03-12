@@ -20,14 +20,14 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
-compose-x-common = "^1.1"
-prometheus-client = "^0.14.1"
+compose-x-common = "^1.2"
+prometheus-client = "^0.16"
 PyYAML = "^6.0"
 
 [tool.poetry.dev-dependencies]
-black = "^22.6.0"
-isort = "^5.10.1"
-pre-commit = "^2.20.0"
+black = "^23.1"
+isort = "^5.10"
+pre-commit = "^3.1"
 mypy-boto3-sts = "^1.24.36"
 mypy-boto3-ecs = "^1.24.36"
 mypy-boto3-ssm = "^1.24.39"
