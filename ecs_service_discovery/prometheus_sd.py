@@ -23,6 +23,25 @@ from ecs_service_discovery.ecs_sd_common import get_container_host_ip
 from ecs_service_discovery.stats import PROMETHEUS_TARGETS
 
 
+def group_targets_by_labels(targets: list[dict]) -> list[dict]:
+    """
+    Groups the targets by job name
+    """
+    result_targets: list[dict] = [targets[0]]
+    for target in targets[1:]:
+        target_labels = target["labels"]
+        for result_target in result_targets:
+            if result_target["labels"] == target_labels:
+                for _target_host in target["targets"]:
+                    if _target_host not in result_target["targets"]:
+                        result_target["targets"].append(_target_host)
+                break
+        else:
+            result_targets.append(target)
+
+    return result_targets
+
+
 def identify_prometheus_enabled_targets(
     tasks: list[dict],
     prometheus_port_label: str = "ecs_sd_prometheus_container_port",
@@ -30,6 +49,11 @@ def identify_prometheus_enabled_targets(
 ) -> list:
     """
     Goes over each task, checks if the prometheus labels are present for mapping.
+
+    :param tasks: List of tasks in the cluster, enriched with the task definition
+    :param prometheus_port_label: DockerLabel name to identify container port to probe for metrics
+    :param prometheus_job_label: Dockerlabel name to identify container to monitor and job to associate with
+
     Returns the task and prometheus host mapping
     """
     prom_mapping: list = []
@@ -53,27 +77,27 @@ def identify_prometheus_enabled_targets(
             )
             if definition:
                 prom_mapping.append(definition)
-
-    return prom_mapping
+    if not prom_mapping:
+        return []
+    return group_targets_by_labels(prom_mapping)
 
 
 def write_prometheus_targets_per_cluster(
     cluster: EcsCluster, cluster_targets: list[dict], output_dir: str, **kwargs
 ) -> None:
     """
-    Writes file for prometheus scraping.
+    Writes file for prometheus scraping. Generates prometheus stats metrics
     """
     cluster_prometheus_targets = identify_prometheus_enabled_targets(cluster_targets)
     PROMETHEUS_TARGETS.labels(cluster.arn).set(
         sum(len(_t["targets"]) for _t in cluster_prometheus_targets)
     )
     file_format = set_else_none("prometheus_output_format", kwargs, alt_value="json")
+    file_path = f"{output_dir}/{cluster.name}.{file_format}"
     if file_format == "yaml":
-        file_path = f"{output_dir}/{cluster.name}.yaml"
         with open(file_path, "w") as targets_fd:
             targets_fd.write(yaml.dump(cluster_prometheus_targets, Dumper=SafeDumper))
     else:
-        file_path = f"{output_dir}/{cluster.name}.json"
         with open(file_path, "w") as targets_fd:
             targets_fd.write(
                 json.dumps(cluster_prometheus_targets, separators=(",", ":"), indent=1)
@@ -116,9 +140,7 @@ def create_prometheus_target_definition(
     container_name = container["name"]
 
     for task_container in task["containers"]:
-        if (
-            container_name != task_container["name"]
-        ):
+        if container_name != task_container["name"]:
             continue
         network_bindings = set_else_none("networkBindings", task_container, [])
         port_mappings = set_else_none("portMappings", container, [])

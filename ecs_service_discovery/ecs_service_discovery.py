@@ -19,8 +19,7 @@ from ecs_service_discovery.ecs_sd_common import merge_tasks_and_hosts
 from ecs_service_discovery.prometheus_sd import write_prometheus_targets_per_cluster
 from ecs_service_discovery.stats import CLUSTER_PROMETHEUS_PROCESSING_TIME
 
-
-LOG = logging.getLogger('ecs-sd')
+LOG = logging.getLogger("ecs-sd")
 LOG.setLevel(logging.DEBUG)
 
 
