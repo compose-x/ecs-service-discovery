@@ -1,0 +1,32 @@
+---
+# ECS Service discovery
+
+version: "3.8"
+volumes:
+  rendered_hosts:
+services:
+  ecs-service-discovery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: public.ecr.aws/compose-x/ecs-service-discovery
+    volumes:
+      - rendered_hosts:/rendered_hosts
+    environment:
+      AWS_PROFILE: ${AWS_PROFILE:-default}
+    x-iam:
+      Policies:
+        - PolicyName: ECSServiceDiscoverySimple
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecs:ListClusters
+                  - ecs:ListContainerInstances
+                  - ecs:ListTasks
+                  - ecs:DescribeContainerInstances
+                  - ssm:DescribeInstanceInformation
+                  - ecs:DescribeTasks
+                  - ecs:DescribeTaskDefinition
+                Resource: '*'

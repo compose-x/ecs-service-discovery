@@ -25,7 +25,7 @@ from ecs_service_discovery.stats import PROMETHEUS_TARGETS
 
 def group_targets_by_labels(targets: list[dict]) -> list[dict]:
     """
-    Groups the targets by job name
+    Groups the targets together when there is identical labels match.
     """
     result_targets: list[dict] = [targets[0]]
     for target in targets[1:]:
@@ -136,6 +136,16 @@ def create_prometheus_target_definition(
 ) -> dict:
     """
     Maps container from task_definition to task, identifies the prometheus scan port, returns host target.
+
+    :param task: The ECS Task running the containers
+    :param job_name: The job_name to use for the target
+    :param host_ip: The IP address of the host
+    :param container: The container definition from the task definition
+    :param prometheus_port: The port to probe for metrics
+
+    Returns the target definition for the prometheus scraping.
+
+    :raises KeyError: If the container definition is not found in the task definition.
     """
     container_name = container["name"]
 
