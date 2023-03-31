@@ -43,14 +43,12 @@ def identify_prometheus_enabled_targets(
                 or prometheus_job_label not in labels
             ):
                 continue
-
             prometheus_port = int(labels[prometheus_port_label])
-            container_name = container["name"]
-            definition = create_prometheus_target(
+            definition = create_prometheus_target_definition(
                 task,
                 labels[prometheus_job_label],
                 _host_ip,
-                container_name,
+                container,
                 prometheus_port,
             )
             if definition:
@@ -109,32 +107,52 @@ def set_labels(task: dict, container_name, job_name: str) -> dict:
     return labels
 
 
-def create_prometheus_target(
-    task: dict, job_name: str, host_ip: str, container_name: str, prometheus_port: int
+def create_prometheus_target_definition(
+    task: dict, job_name: str, host_ip: str, container: dict, prometheus_port: int
 ) -> dict:
     """
     Maps container from task_definition to task, identifies the prometheus scan port, returns host target.
     """
+    container_name = container["name"]
+
     for task_container in task["containers"]:
         if (
-            not keyisset("networkBindings", task_container)
-            or container_name != task_container["name"]
+            container_name != task_container["name"]
         ):
             continue
-        network_bindings = set_else_none("networkBindings", task_container)
-        for network_config in network_bindings:
-            if int(network_config["containerPort"]) == int(prometheus_port):
-                scraping_port = int(
-                    set_else_none(
-                        "hostPort",
-                        network_config,
-                        alt_value=set_else_none("containerPort", network_config),
+        network_bindings = set_else_none("networkBindings", task_container, [])
+        port_mappings = set_else_none("portMappings", container, [])
+        if network_bindings:
+            for network_config in network_bindings:
+                if int(network_config["containerPort"]) == int(prometheus_port):
+                    scraping_port = int(
+                        set_else_none(
+                            "hostPort",
+                            network_config,
+                            alt_value=set_else_none("containerPort", network_config),
+                        )
                     )
-                )
-                break
+                    break
+            else:
+                print("No prometheus port found for task network settings")
+                return {}
+        elif not network_bindings and port_mappings:
+            for network_config in port_mappings:
+                if int(network_config["containerPort"]) == int(prometheus_port):
+                    scraping_port = int(
+                        set_else_none(
+                            "hostPort",
+                            network_config,
+                            alt_value=set_else_none("containerPort", network_config),
+                        )
+                    )
+                    break
+            else:
+                print("No prometheus port found for task network settings")
+                return {}
         else:
-            print("No prometheus port found for task network settings")
             return {}
+
         labels = set_labels(task, task_container["name"], job_name)
 
         return {

@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import logging
 import signal
 from datetime import datetime as dt
 from time import sleep
@@ -17,6 +18,10 @@ from prometheus_client import start_http_server
 from ecs_service_discovery.ecs_sd_common import merge_tasks_and_hosts
 from ecs_service_discovery.prometheus_sd import write_prometheus_targets_per_cluster
 from ecs_service_discovery.stats import CLUSTER_PROMETHEUS_PROCESSING_TIME
+
+
+LOG = logging.getLogger('ecs-sd')
+LOG.setLevel(logging.DEBUG)
 
 
 class EcsCluster:
@@ -94,12 +99,12 @@ class EcsServiceDiscovery:
                     CLUSTER_PROMETHEUS_PROCESSING_TIME.labels(cluster_arn).set(
                         (dt.now() - start).total_seconds()
                     )
-                if not self._quit_now:
-                    sleep(refresh_interval)
+                for _wait in range(1, refresh_interval):
+                    if not self._quit_now:
+                        sleep(_wait)
             except KeyboardInterrupt:
                 self._run = False
                 self._quit_now = True
-        print(f"Exiting with {self._run}")
         return 0
 
     def exit_gracefully(self, signum, event):
