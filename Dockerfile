@@ -1,5 +1,6 @@
-ARG BUILD_IMAGE=public.ecr.aws/lambda/python:3.9
-ARG BASE_IMAGE=public.ecr.aws/docker/library/python:alpine
+ARG PYTHON_VERSION=3.10
+ARG BUILD_IMAGE=public.ecr.aws/lambda/python:${PYTHON_VERSION}
+ARG BASE_IMAGE=public.ecr.aws/docker/library/python:${PYTHON_VERSION}-alpine
 
 FROM $BUILD_IMAGE as builder
 WORKDIR /app
