@@ -15,7 +15,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/compose-x/ecs_service_discovery/issues.
+Report bugs at https://github.com/compose-x/ecs-service-discovery/issues.
 
 If you are reporting a bug, please include:
 
@@ -45,7 +45,7 @@ articles, and such.
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://github.com/compose-x/ecs_service_discovery/issues.
+The best way to send feedback is to file an issue at https://github.com/compose-x/ecs-service-discovery/issues.
 
 If you are proposing a feature:
 
@@ -59,7 +59,7 @@ Get Started!
 
 Ready to contribute? Here's how to set up `ecs_service_discovery` for local development.
 
-1. Fork the `ecs_service_discovery` repo on GitHub.
+1. Fork the `ecs-service-discovery` repo on GitHub.
 2. Clone your fork locally::
 
     $ git clone git@github.com:your_name_here/ecs_service_discovery.git
