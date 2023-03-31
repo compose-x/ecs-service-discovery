@@ -4,10 +4,10 @@
 from __future__ import annotations
 
 import json
+import pathlib
+from os import path
 from typing import TYPE_CHECKING
 
-from os import path
-import pathlib
 import yaml
 
 try:
@@ -48,6 +48,7 @@ def group_targets_by_labels(targets: list[dict]) -> tuple:
             jobs_targets_mappings[job_name] = result_target
 
     return jobs_targets_mappings, result_targets
+
 
 def identify_prometheus_enabled_targets(
     tasks: list[dict],
@@ -124,6 +125,7 @@ def write_prometheus_targets_per_cluster(
                 cluster_job_fd.write(
                     json.dumps([job_targets], separators=(",", ":"), indent=1)
                 )
+
 
 def set_labels(task: dict, container_name, job_name: str) -> dict:
     task_def = task["_taskDefinition"]
