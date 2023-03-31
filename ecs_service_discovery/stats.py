@@ -6,17 +6,17 @@ from __future__ import annotations
 from prometheus_client import Gauge
 
 CLUSTER_TASKS = Gauge(
-    "cluster_tasks",
+    "ecs_cluster_tasks",
     "Number of tasks in the cluster",
     labelnames=["cluster_arn"],
 )
 CLUSTER_INSTANCES = Gauge(
-    "cluster_instances",
+    "ecs_cluster_instances",
     "Number of ECS Instances in the cluster",
     labelnames=["cluster_arn"],
 )
 CLUSTER_PROMETHEUS_PROCESSING_TIME = Gauge(
-    "cluster_tasks_processing_time",
+    "ecs_cluster_tasks_processing_time",
     "Amount of time spent scanning the cluster",
     labelnames=["cluster_arn"],
 )

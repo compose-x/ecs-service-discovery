@@ -6,6 +6,8 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING
 
+from os import path
+import pathlib
 import yaml
 
 try:
@@ -23,7 +25,7 @@ from ecs_service_discovery.ecs_sd_common import get_container_host_ip
 from ecs_service_discovery.stats import PROMETHEUS_TARGETS
 
 
-def group_targets_by_labels(targets: list[dict]) -> list[dict]:
+def group_targets_by_labels(targets: list[dict]) -> tuple:
     """
     Groups the targets together when there is identical labels match.
     """
@@ -39,14 +41,19 @@ def group_targets_by_labels(targets: list[dict]) -> list[dict]:
         else:
             result_targets.append(target)
 
-    return result_targets
+    jobs_targets_mappings: dict = {}
+    for result_target in result_targets:
+        job_name = result_target["labels"]["job"]
+        if job_name not in jobs_targets_mappings:
+            jobs_targets_mappings[job_name] = result_target
 
+    return jobs_targets_mappings, result_targets
 
 def identify_prometheus_enabled_targets(
     tasks: list[dict],
     prometheus_port_label: str = "ecs_sd_prometheus_container_port",
     prometheus_job_label: str = "ecs_sd_prometheus_job_name",
-) -> list:
+) -> Union[tuple, None]:
     """
     Goes over each task, checks if the prometheus labels are present for mapping.
 
@@ -54,7 +61,7 @@ def identify_prometheus_enabled_targets(
     :param prometheus_port_label: DockerLabel name to identify container port to probe for metrics
     :param prometheus_job_label: Dockerlabel name to identify container to monitor and job to associate with
 
-    Returns the task and prometheus host mapping
+    Returns the task and prometheus host mapping, or None
     """
     prom_mapping: list = []
     for task in tasks:
@@ -78,7 +85,7 @@ def identify_prometheus_enabled_targets(
             if definition:
                 prom_mapping.append(definition)
     if not prom_mapping:
-        return []
+        return None
     return group_targets_by_labels(prom_mapping)
 
 
@@ -88,7 +95,10 @@ def write_prometheus_targets_per_cluster(
     """
     Writes file for prometheus scraping. Generates prometheus stats metrics
     """
-    cluster_prometheus_targets = identify_prometheus_enabled_targets(cluster_targets)
+    targets = identify_prometheus_enabled_targets(cluster_targets)
+    if not targets:
+        return
+    cluster_prometheus_targets = targets[1]
     PROMETHEUS_TARGETS.labels(cluster.arn).set(
         sum(len(_t["targets"]) for _t in cluster_prometheus_targets)
     )
@@ -102,7 +112,18 @@ def write_prometheus_targets_per_cluster(
             targets_fd.write(
                 json.dumps(cluster_prometheus_targets, separators=(",", ":"), indent=1)
             )
-
+    cluster_path_dir = f"{output_dir}/{cluster.name}/per_job"
+    cluster_jobs_dir = pathlib.Path(path.abspath(cluster_path_dir))
+    cluster_jobs_dir.mkdir(parents=True, exist_ok=True)
+    for job_name, job_targets in targets[0].items():
+        job_file_name = f"{cluster_path_dir}/{job_name}.{file_format}"
+        with open(job_file_name, "w") as cluster_job_fd:
+            if file_format == "yaml":
+                cluster_job_fd.write(yaml.dump([job_targets], Dumper=SafeDumper))
+            else:
+                cluster_job_fd.write(
+                    json.dumps([job_targets], separators=(",", ":"), indent=1)
+                )
 
 def set_labels(task: dict, container_name, job_name: str) -> dict:
     task_def = task["_taskDefinition"]
