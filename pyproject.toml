@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ecs_service_discovery"
-version = "0.0.1"
+version = "0.1.0"
 description = "ECS Service Discovery"
 authors = ["John Preston <john@ews-network.net>"]
 readme = "README.rst"
@@ -75,7 +75,7 @@ omit = [
 ]
 
 [tool.tbump.version]
-current = "0.0.1"
+current = "0.1.0"
 regex = '''
   (?P<major>\d+)
   \.
