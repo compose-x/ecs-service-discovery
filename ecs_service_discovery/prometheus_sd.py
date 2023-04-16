@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import pathlib
 from os import path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 import yaml
 
@@ -146,6 +146,15 @@ def set_labels(task: dict, container_name, job_name: str) -> dict:
         "__meta_ecs_task_launch_type": task["launchType"],
     }
     labels.update(container_def["dockerLabels"])
+    to_add: dict = {}
+    to_del: list[str] = []
+    for label_name, label_value in labels.items():
+        if label_name.startswith("ecs_"):
+            to_add[f"__meta_{label_name}"] = label_value
+            to_del.append(label_name)
+    for label_to_del in to_del:
+        del labels[label_to_del]
+    labels.update(to_add)
     task_instance = set_else_none("_instance", task)
     if task_instance:
         labels["__meta_ecs_task_instance"]: str = task_instance["containerInstanceArn"]
