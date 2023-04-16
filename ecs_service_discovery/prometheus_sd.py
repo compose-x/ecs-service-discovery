@@ -140,17 +140,19 @@ def set_labels(task: dict, container_name, job_name: str) -> dict:
         )
     labels = {
         "job": job_name,
-        "ecs_cluster_arn": task["clusterArn"],
-        "ecs_task_definition_arn": task_def["taskDefinitionArn"],
-        "ecs_task_family": task_def["family"],
-        "ecs_task_launch_type": task["launchType"],
+        "__meta_ecs_cluster_arn": task["clusterArn"],
+        "__meta_ecs_task_definition_arn": task_def["taskDefinitionArn"],
+        "__meta_ecs_task_family": task_def["family"],
+        "__meta_ecs_task_launch_type": task["launchType"],
     }
     labels.update(container_def["dockerLabels"])
     task_instance = set_else_none("_instance", task)
     if task_instance:
-        labels["ecs_task_instance"]: str = task_instance["containerInstanceArn"]
+        labels["__meta_ecs_task_instance"]: str = task_instance["containerInstanceArn"]
         if keyisset("ec2InstanceId", task_instance):
-            labels["ecs_instance_ec2_instance_id"] = task_instance["ec2InstanceId"]
+            labels["__meta_ecs_instance_ec2_instance_id"] = task_instance[
+                "ec2InstanceId"
+            ]
     return labels
 
 
