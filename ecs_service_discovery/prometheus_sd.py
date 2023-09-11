@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import json
-import pathlib
 from os import path
 from typing import TYPE_CHECKING, Union
+from tempfile import TemporaryDirectory
+from pathlib import Path
+import shutil
 
 import yaml
 
@@ -103,28 +105,35 @@ def write_prometheus_targets_per_cluster(
     PROMETHEUS_TARGETS.labels(cluster.arn).set(
         sum(len(_t["targets"]) for _t in cluster_prometheus_targets)
     )
+    temp_dir = TemporaryDirectory()
     file_format = set_else_none("prometheus_output_format", kwargs, alt_value="json")
     file_path = f"{output_dir}/{cluster.name}.{file_format}"
+    temp_file_path = "{}/{}.{}".format(temp_dir.name, cluster.name, file_format)
     if file_format == "yaml":
-        with open(file_path, "w") as targets_fd:
+        with open(temp_file_path, "w") as targets_fd:
             targets_fd.write(yaml.dump(cluster_prometheus_targets, Dumper=SafeDumper))
     else:
-        with open(file_path, "w") as targets_fd:
+        with open(temp_file_path, "w") as targets_fd:
             targets_fd.write(
                 json.dumps(cluster_prometheus_targets, separators=(",", ":"), indent=1)
             )
+    shutil.move(temp_file_path, file_path)
     cluster_path_dir = f"{output_dir}/{cluster.name}/per_job"
-    cluster_jobs_dir = pathlib.Path(path.abspath(cluster_path_dir))
+    cluster_jobs_dir = Path(path.abspath(cluster_path_dir))
+    temp_cluster_jobs_dir = Path("{}/{}".format(temp_dir.name, cluster_path_dir))
     cluster_jobs_dir.mkdir(parents=True, exist_ok=True)
+    temp_cluster_jobs_dir.mkdir(parents=True, exist_ok=True)
     for job_name, job_targets in targets[0].items():
         job_file_name = f"{cluster_path_dir}/{job_name}.{file_format}"
-        with open(job_file_name, "w") as cluster_job_fd:
+        temp_job_file_name = "{}/{}".format(temp_dir.name, job_file_name)
+        with open(temp_job_file_name, "w") as cluster_job_fd:
             if file_format == "yaml":
                 cluster_job_fd.write(yaml.dump([job_targets], Dumper=SafeDumper))
             else:
                 cluster_job_fd.write(
                     json.dumps([job_targets], separators=(",", ":"), indent=1)
                 )
+        shutil.move(temp_job_file_name, job_file_name)
 
 
 def set_labels(task: dict, container_name, job_name: str) -> dict:
