@@ -28,7 +28,7 @@ exclude = ["*.pyc", "*~", "*pycache*"]
 
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 compose-x-common = "^1.2"
 prometheus-client = "^0.16"
 PyYAML = "^6.0"
@@ -39,7 +39,7 @@ ecs-sd = "ecs_service_discovery.cli:main"
 
 [tool.poetry.group.dev.dependencies]
 tbump = "^6.9.0"
-black = ">=23.1,<25.0"
+black = "^24.1"
 isort = "^5.10"
 pre-commit = "^3.1"
 mypy-boto3-sts = "^1.24"
@@ -50,7 +50,7 @@ sphinx-material = "^0.0.35"
 sphinx-sitemap = "^2.2.0"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.black]
