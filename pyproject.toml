@@ -30,7 +30,7 @@ exclude = ["*.pyc", "*~", "*pycache*"]
 [tool.poetry.dependencies]
 python = "^3.9"
 compose-x-common = "^1.2"
-prometheus-client = "^0.16"
+prometheus-client = "^0.20"
 PyYAML = "^6.0"
 
 [tool.poetry.scripts]
